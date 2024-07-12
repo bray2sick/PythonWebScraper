@@ -1,5 +1,3 @@
-# main.py
-
 import os
 import requests
 from urllib.parse import urlparse, urlunparse, urljoin
