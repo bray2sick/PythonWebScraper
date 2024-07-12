@@ -9,17 +9,17 @@ from bs4 import BeautifulSoup
 
 def fetch_website(url):
     try:
-        # Parse the URL to ensure it includes a scheme
-        parsed_url = urlparse(url)
-        if not parsed_url.scheme:
+        # Process the URL to ensure it includes a scheme
+        process_url = urlparse(url)
+        if not process_url.scheme:
             # Add 'https' as the default scheme if missing
-            url = urlunparse(('https',) + parsed_url[1:])
+            url = urlunparse(('https',) + process_url[1:])
         
         # Send a GET request to the URL
         response = requests.get(url)
         response.raise_for_status()  # Raise an exception for HTTP errors
         
-        # Parse the HTML content using BeautifulSoup
+        # Process the HTML content using BeautifulSoup
         html_content = response.text
         soup = BeautifulSoup(html_content, 'html.parser')
         
@@ -41,13 +41,15 @@ def save_content(soup, css_content, output_folder, filename):
     # Define the folders for HTML and CSS
     html_folder = os.path.join(output_folder, "html")
     css_folder = os.path.join(output_folder, "css")
+    # Create the html folder if it doesn't exist
     os.makedirs(html_folder, exist_ok=True)
+    # Create the css folder if it doesn't exist
     os.makedirs(css_folder, exist_ok=True)
     
     # Define the path to save the HTML file
     html_filepath = os.path.join(html_folder, filename)
     if os.path.exists(html_filepath):
-        # Generate a unique filename if the file already exists
+        # Ensure unique filenames to avoid overwriting
         filename = str(uuid.uuid4()) + ".html"
         html_filepath = os.path.join(html_folder, filename)
     
@@ -60,9 +62,10 @@ def save_content(soup, css_content, output_folder, filename):
     for css_url, css_text in css_content.items():
         css_filename = os.path.basename(urlparse(css_url).path)
         css_filepath = os.path.join(css_folder, css_filename)
-        
+        # Open the CSS file in write mode with UTF-8 encoding
         with open(css_filepath, 'w', encoding='utf-8') as f:
             f.write(css_text)
+        # Print a confirmation message with the path to the saved CSS file    
         print(f"CSS content saved to {css_filepath}")
 
 def main():
