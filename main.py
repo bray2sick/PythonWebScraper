@@ -1,72 +1,56 @@
-# Standard Python libraries
-import os
-import requests
-import uuid
+# Importing necessary standard libraries
+import os  # For file and directory operations
+import requests  # For making HTTP requests
+import uuid  # For generating unique filenames
 
-# Third-party libraries
-from urllib.parse import urlparse, urlunparse, urljoin
-from bs4 import BeautifulSoup
+# Importing third-party libraries
+from urllib.parse import urlparse, urlunparse, urljoin  # For URL manipulation
+from bs4 import BeautifulSoup  # For processing HTML content
 
-def fetch_website(url):
+def find_website(url):
     try:
-        # Process the URL to ensure it includes a scheme
         process_url = urlparse(url)
-        if not process_url.scheme:
-            # Add 'https' as the default scheme if missing
-            url = urlunparse(('https',) + process_url[1:])
+        if not process_url.scheme:  # Check if the scheme (http/https) is missing
+            url = urlunparse(('https',) + process_url[1:])  # Add 'https' as the default scheme if missing
         
-        # Send a GET request to the URL
-        response = requests.get(url)
+        response = requests.get(url)  # Find the content from the URL
         response.raise_for_status()  # Raise an exception for HTTP errors
         
-        # Process the HTML content using BeautifulSoup
-        html_content = response.text
-        soup = BeautifulSoup(html_content, 'html.parser')
+        html_content = response.text  # Get the HTML content as text
+        soup = BeautifulSoup(html_content, 'html.parser')  # Create a BeautifulSoup object to process the HTML
         
-        # Find all CSS link elements
-        css_links = soup.find_all('link', rel='stylesheet')
-        # Fetch CSS content for each link
+        css_links = soup.find_all('link', rel='stylesheet')  # Find all <link> tags with rel="stylesheet"
         css_content = {
             urljoin(url, css_link['href']): requests.get(urljoin(url, css_link['href'])).text
-            for css_link in css_links
+            for css_link in css_links  # Find and store CSS content for each link
         }
         
-        return soup, css_content
+        return soup, css_content  # Return the processed HTML content and the found CSS content
     except requests.exceptions.RequestException as e:
-        # Print an error message if the request fails
-        print(f"Error fetching {url}: {e}")
-        return None, None
+        print(f"Error finding {url}: {e}")  # Print an error message if the request fails
+        return None, None  # Return None for both HTML and CSS content on error
 
 def save_content(soup, css_content, output_folder, filename):
-    # Define the folders for HTML and CSS
-    html_folder = os.path.join(output_folder, "html")
-    css_folder = os.path.join(output_folder, "css")
-    # Create the html folder if it doesn't exist
-    os.makedirs(html_folder, exist_ok=True)
-    # Create the css folder if it doesn't exist
-    os.makedirs(css_folder, exist_ok=True)
+    html_folder = os.path.join(output_folder, "html")  # Path for HTML folder
+    css_folder = os.path.join(output_folder, "css")  # Path for CSS folder
+    os.makedirs(html_folder, exist_ok=True)  # Ensure the HTML folder exists
+    os.makedirs(css_folder, exist_ok=True)  # Ensure the CSS folder exists
     
-    # Define the path to save the HTML file
-    html_filepath = os.path.join(html_folder, filename)
-    if os.path.exists(html_filepath):
-        # Ensure unique filenames to avoid overwriting
-        filename = str(uuid.uuid4()) + ".html"
-        html_filepath = os.path.join(html_folder, filename)
+    html_filepath = os.path.join(html_folder, filename)  # Path for the HTML file
+    if os.path.exists(html_filepath):  # Check if the file already exists
+        filename = str(uuid.uuid4()) + ".html"  # Generate a unique filename
+        html_filepath = os.path.join(html_folder, filename)  # Update the file path
     
-    # Save the HTML content to the file
-    with open(html_filepath, 'w', encoding='utf-8') as f:
-        f.write(str(soup))
-    print(f"\nHTML content saved to {html_filepath}")
+    with open(html_filepath, 'w', encoding='utf-8') as f:  # Open the file in write mode
+        f.write(str(soup))  # Write the HTML content
+    print(f"\nHTML content saved to {html_filepath}")  # Print a confirmation message
     
-    # Save each CSS content to its respective file
-    for css_url, css_text in css_content.items():
-        css_filename = os.path.basename(urlparse(css_url).path)
-        css_filepath = os.path.join(css_folder, css_filename)
-        # Open the CSS file in write mode with UTF-8 encoding
-        with open(css_filepath, 'w', encoding='utf-8') as f:
-            f.write(css_text)
-        # Print a confirmation message with the path to the saved CSS file    
-        print(f"CSS content saved to {css_filepath}")
+    for css_url, css_text in css_content.items():  # Loop through each CSS content
+        css_filename = os.path.basename(urlparse(css_url).path)  # Extract the filename from the URL
+        css_filepath = os.path.join(css_folder, css_filename)  # Path for the CSS file
+        with open(css_filepath, 'w', encoding='utf-8') as f:  # Open the CSS file in write mode with UTF-8 encoding
+            f.write(css_text)  # Write the CSS content
+        print(f"CSS content saved to {css_filepath}")# Print a confirmation message with the path to the saved CSS file    
 
 def main():
     while True:
@@ -78,35 +62,25 @@ def main():
         print("2. Exit")
         print("=" * 28)
         
-        # Get user choice
-        choice = input("Enter your choice: ").strip()
+        choice = input("Enter your choice: ").strip()  # Get user choice
         
         if choice == '1':
-            # Get URL input from the user
-            url_input = input("Enter the URL: ").strip()
-            if not url_input.startswith('http'):
-                # Add 'https://' prefix if the URL doesn't start with 'http'
-                url_input = 'https://' + url_input
+            url_input = input("Enter the URL: ").strip()  # Get the URL from the user
+            if not url_input.startswith('http'):  # Check if the URL starts with 'http'
+                url_input = 'https://' + url_input  # Add 'https://' prefix if the URL doesn't start with 'http'
                 
-            # Get filename input from the user
-            filename_input = input("Enter the filename to save (without extension): ").strip() + ".html"
-            # Use the current working directory as the output folder
-            output_folder = os.getcwd()
+            filename_input = input("Enter the filename to save (without extension): ").strip() + ".html"  # Get the filename from the user
+            output_folder = os.getcwd()# Use the current working directory as the output folder
             
-            # Fetch website's HTML and CSS content
-            soup, css_content = fetch_website(url_input)
+            soup, css_content = find_website(url_input)  # Find website's HTML and CSS content
             
             if soup:
-                # Save the HTML and CSS content to files
-                save_content(soup, css_content, output_folder, filename_input)
+                save_content(soup, css_content, output_folder, filename_input)  # Save the HTML and CSS content to files
         elif choice == '2':
-            # Exit the program
-            print("\nExiting...\n")
+            print("\nExiting...\n")  # Exit the program
             break
         else:
-            # Print an error message for invalid options
-            print("\nInvalid option. Please enter 1 or 2.\n")
-
+            print("\nInvalid option. Please enter 1 or 2.\n")  # Print an error message for invalid options
+            
 if __name__ == "__main__":
-    # Run the main function if the script is executed directly
-    main()
+    main()  # Call the main function
