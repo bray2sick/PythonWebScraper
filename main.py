@@ -50,7 +50,8 @@ def save_content(soup, css_content, output_folder, filename):
         css_filepath = os.path.join(css_folder, css_filename)  # Path for the CSS file
         with open(css_filepath, 'w', encoding='utf-8') as f:  # Open the CSS file in write mode with UTF-8 encoding
             f.write(css_text)  # Write the CSS content
-        print(f"CSS content saved to {css_filepath}")# Print a confirmation message with the path to the saved CSS file    
+        print(f"CSS content saved to {css_filepath}")# Print a confirmation message with the path to the saved CSS file
+    print("")
 
 def main():
     while True:
